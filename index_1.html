@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendario de operación · Encuestas institucionales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --tinta:#00534C; --verde:#007864; --teal:#00A499; --menta:#6BCABA;
+  --brote:#26D07C; --crema:#f9f1E6;
+  --papel:#ffffff; --linea:#e3dccd; --texto:#20302e; --tenue:#6f7f7c;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--crema); color:var(--texto);
+  font-family:'Montserrat',system-ui,sans-serif; font-weight:400;
+  font-size:14px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1240px;margin:0 auto;padding:0 22px}
+.eyebrow{
+  font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--menta);
+}
+
+/* ---------- encabezado ---------- */
+header.top{background:var(--tinta);color:var(--crema);padding:26px 0 22px}
+.top-grid{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between}
+h1{
+  margin:6px 0 0;font-size:clamp(26px,4.2vw,44px);font-weight:800;
+  letter-spacing:-.035em;line-height:1;color:#fff;
+}
+h1 span{display:block;font-weight:200;color:var(--menta);letter-spacing:-.02em}
+.top-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.hoy{
+  font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--menta);
+  border:1px solid rgba(107,202,186,.4);border-radius:999px;padding:7px 13px;
+}
+select.anio{
+  font-family:inherit;font-size:14px;font-weight:700;letter-spacing:.02em;
+  background:var(--brote);color:var(--tinta);border:0;border-radius:999px;
+  padding:9px 16px;cursor:pointer;appearance:none;
+}
+select.anio:focus-visible{outline:2px solid #fff;outline-offset:2px}
+
+/* ---------- filtros ---------- */
+.filtros{background:var(--papel);border-bottom:1px solid var(--linea);padding:16px 0 14px;position:sticky;top:0;z-index:30}
+.fila{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:9px}
+.fila:last-child{margin-bottom:0}
+.fila-tit{
+  font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--tenue);width:92px;flex-shrink:0;padding-right:8px;
+}
+.chip{
+  font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.01em;
+  background:transparent;color:var(--verde);border:1px solid var(--linea);
+  border-radius:999px;padding:6px 13px;cursor:pointer;transition:.14s;
+}
+.chip:hover{border-color:var(--teal);color:var(--tinta)}
+.chip[aria-pressed="true"]{background:var(--tinta);border-color:var(--tinta);color:#fff}
+.chip.mini[aria-pressed="true"]{background:var(--teal);border-color:var(--teal)}
+input.buscar{
+  font-family:inherit;font-size:12.5px;padding:7px 13px;border:1px solid var(--linea);
+  border-radius:999px;background:var(--crema);color:var(--texto);min-width:190px;flex:1;max-width:280px;
+}
+input.buscar:focus{outline:2px solid var(--menta);outline-offset:1px}
+.limpiar{
+  font-family:inherit;font-size:11px;font-weight:600;background:none;border:0;
+  color:var(--tenue);cursor:pointer;text-decoration:underline;padding:6px;
+}
+.limpiar:hover{color:var(--tinta)}
+
+/* ---------- indicadores ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--linea);
+  border:1px solid var(--linea);border-radius:var(--r);overflow:hidden;margin:20px 0 18px}
+.stat{background:var(--papel);padding:14px 16px}
+button.stat{font-family:inherit;border:0;text-align:left;cursor:pointer;width:100%}
+button.stat.liga:hover{background:#fbf8f1}
+button.stat.liga:hover span{color:var(--verde);text-decoration:underline}
+button.stat:focus-visible{outline:2px solid var(--brote);outline-offset:-2px}
+.stat b{display:block;font-size:30px;font-weight:800;letter-spacing:-.04em;color:var(--tinta);
+  font-variant-numeric:tabular-nums;line-height:1.05}
+.stat span{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--tenue)}
+.stat.alerta b{color:#b4642a}
+
+/* ---------- pestañas ---------- */
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--linea);margin-bottom:18px}
+.tab{
+  font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-2px;
+  padding:11px 18px;color:var(--tenue);cursor:pointer;
+}
+.tab[aria-selected="true"]{color:var(--tinta);border-bottom-color:var(--brote)}
+
+/* ---------- cinta anual ---------- */
+.panel{background:var(--papel);border:1px solid var(--linea);border-radius:var(--r);overflow:hidden}
+.cinta-scroll{overflow-x:auto}
+.cinta{min-width:940px;position:relative}
+.meses{display:grid;grid-template-columns:190px 1fr;border-bottom:1px solid var(--linea);
+  position:sticky;top:0;background:var(--papel);z-index:5}
+.meses .rail{padding:9px 14px;font-size:9.5px;font-weight:700;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--tenue);border-right:1px solid var(--linea)}
+.meses .track{display:grid;grid-template-columns:repeat(12,1fr)}
+.meses .m{font-size:9.5px;font-weight:700;letter-spacing:.1em;color:var(--tenue);
+  padding:9px 0 9px 7px;border-left:1px solid var(--linea)}
+.meses .m:first-child{border-left:0}
+.grupo-tit{
+  display:grid;grid-template-columns:190px 1fr;background:var(--crema);
+  border-bottom:1px solid var(--linea);border-top:1px solid var(--linea);
+}
+.grupo-tit .rail{padding:7px 14px;font-size:10px;font-weight:800;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--tinta)}
+.grupo-tit .cuenta{padding:7px 14px;font-size:10px;font-weight:600;color:var(--tenue);letter-spacing:.06em}
+.lane{display:grid;grid-template-columns:190px 1fr;border-bottom:1px solid #f2ede2;cursor:pointer}
+.lane:hover{background:#fbf8f1}
+.lane .rail{padding:8px 14px;border-right:1px solid var(--linea);min-width:0}
+.lane .rail b{display:block;font-size:12px;font-weight:600;color:var(--texto);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lane .rail small{font-size:10px;color:var(--tenue);font-weight:500}
+.track{position:relative;height:36px}
+.grid-mes{position:absolute;inset:0;display:grid;grid-template-columns:repeat(12,1fr);pointer-events:none}
+.grid-mes i{border-left:1px solid #f2ede2}
+.grid-mes i:first-child{border-left:0}
+.barra{
+  position:absolute;top:12px;height:14px;border-radius:7px;
+  background:var(--teal);min-width:5px;
+}
+.barra.compromisos{background:var(--tinta)}
+.barra.monitoreo{background:var(--teal)}
+.marca{position:absolute;top:14px;width:10px;height:10px;margin-left:-5px}
+.marca.recep{background:var(--menta);transform:rotate(45deg);border-radius:2px}
+.marca.entrega{width:0;height:0;margin-left:-6px;top:13px;
+  border-left:6px solid transparent;border-right:6px solid transparent;
+  border-bottom:11px solid var(--brote)}
+.hoy-linea{position:absolute;top:0;bottom:0;width:2px;background:var(--brote);opacity:.55;z-index:4;pointer-events:none}
+.meses .track{position:relative}
+.hoy-rotulo{position:absolute;top:0;bottom:0;width:2px;background:var(--brote);z-index:6}
+.hoy-rotulo::before{content:'HOY';position:absolute;top:9px;left:5px;font-size:8.5px;font-weight:800;
+  letter-spacing:.14em;color:var(--tinta);background:var(--brote);padding:2px 5px;border-radius:3px}
+.leyenda{display:flex;gap:18px;flex-wrap:wrap;padding:12px 16px;background:var(--crema);
+  border-top:1px solid var(--linea);font-size:10.5px;font-weight:600;color:var(--tenue);letter-spacing:.03em}
+.leyenda span{display:flex;align-items:center;gap:7px}
+.sw{width:20px;height:9px;border-radius:5px;background:var(--tinta)}
+.sw.t{background:var(--teal)}
+.sw.d{width:9px;height:9px;background:var(--menta);transform:rotate(45deg);border-radius:2px}
+.sw.tri{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;
+  border-bottom:9px solid var(--brote);background:none}
+
+/* ---------- agenda ---------- */
+.agenda-ctl{display:flex;gap:8px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--linea)}
+.agenda-ctl .fila-tit{width:auto}
+.mes-bloque{border-bottom:1px solid var(--linea)}
+.mes-bloque:last-child{border-bottom:0}
+.mes-cab{display:flex;align-items:baseline;gap:12px;padding:12px 18px;background:var(--crema)}
+.mes-cab h3{margin:0;font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--tinta)}
+.mes-cab small{font-size:10px;font-weight:600;color:var(--tenue);letter-spacing:.06em}
+.ev{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;
+  padding:11px 18px;border-top:1px solid #f2ede2;cursor:pointer}
+.ev:hover{background:#fbf8f1}
+.ev-fecha{text-align:center;line-height:1}
+.ev-fecha b{display:block;font-size:21px;font-weight:800;letter-spacing:-.04em;color:var(--tinta);
+  font-variant-numeric:tabular-nums}
+.ev-fecha span{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--tenue)}
+.ev-cuerpo b{display:block;font-size:13.5px;font-weight:600}
+.ev-cuerpo small{font-size:11px;color:var(--tenue)}
+.tipo{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:4px 9px;border-radius:999px;white-space:nowrap}
+.tipo.recepcion{background:#e8f5f2;color:var(--verde)}
+.tipo.inicio{background:var(--tinta);color:#fff}
+.tipo.cierre{background:#e8f5f2;color:var(--tinta)}
+.tipo.entrega{background:var(--brote);color:#023d33}
+.ev.pasado{opacity:.42}
+
+/* ---------- tabla ---------- */
+.tabla-scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:900px;font-size:12px}
+th{background:var(--tinta);color:#fff;text-align:left;padding:10px 12px;
+  font-size:9.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid #f2ede2;vertical-align:top}
+tbody tr:hover{background:#fbf8f1}
+td.f{font-variant-numeric:tabular-nums;white-space:nowrap}
+.vacio{color:#c3bcae}
+.pill{font-size:9.5px;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.pill.ci{background:var(--tinta);color:#fff}
+.pill.mo{background:var(--menta);color:#02332d}
+
+/* ---------- estado vacío / pie ---------- */
+.nada{padding:56px 24px;text-align:center}
+.nada b{display:block;font-size:17px;font-weight:700;color:var(--tinta);margin-bottom:6px;letter-spacing:-.01em}
+.nada span{font-size:13px;color:var(--tenue)}
+.acciones{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin:14px 0 30px}
+.btn{
+  font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  background:var(--verde);color:#fff;border:0;border-radius:999px;padding:10px 20px;cursor:pointer;
+}
+.btn:hover{background:var(--tinta)}
+.fuente{font-size:10.5px;color:var(--tenue);letter-spacing:.03em}
+footer{background:var(--tinta);color:var(--menta);padding:22px 0;font-size:10.5px;letter-spacing:.05em}
+footer b{color:var(--crema);font-weight:600}
+
+/* ---------- panel de detalle ---------- */
+.velo{position:fixed;inset:0;background:rgba(0,42,38,.42);z-index:60;display:none}
+.velo.on{display:block}
+.detalle{
+  position:fixed;top:0;right:0;bottom:0;width:min(430px,100%);background:var(--papel);
+  z-index:61;transform:translateX(100%);transition:transform .22s ease;overflow-y:auto;
+}
+.detalle.on{transform:none}
+.detalle-cab{background:var(--tinta);color:#fff;padding:22px 24px}
+.detalle-cab h2{margin:5px 0 0;font-size:23px;font-weight:800;letter-spacing:-.03em}
+.detalle-cab p{margin:5px 0 0;font-size:12px;color:var(--menta);font-weight:500}
+.cerrar{position:absolute;top:16px;right:18px;background:none;border:0;color:var(--menta);
+  font-size:24px;cursor:pointer;line-height:1;font-family:inherit}
+.dl{padding:6px 24px 24px}
+.dl div{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:1px solid #f2ede2}
+.dl dt{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tenue);margin:0}
+.dl dd{margin:0;font-size:13px;font-weight:600;text-align:right;color:var(--texto)}
+.nota{margin:16px 24px 26px;padding:13px 15px;background:#fdf6e8;border-left:3px solid #e0a33c;
+  font-size:12px;color:#6b4f1d;border-radius:0 6px 6px 0}
+
+@media(max-width:760px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .fila-tit{width:100%}
+  .lane,.grupo-tit,.meses{grid-template-columns:130px 1fr}
+  .lane .rail b{font-size:11px}
+  .filtros{position:static}
+  .top-grid{align-items:flex-start}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-grid">
+    <div>
+      <p class="eyebrow" style="margin:0">Analítica Institucional · Universidad Tecmilenio</p>
+      <h1>Calendario de operación<span>Encuestas institucionales</span></h1>
+    </div>
+    <div class="top-meta">
+      <span class="hoy" id="hoy"></span>
+      <select class="anio" id="selAnio" aria-label="Año"></select>
+    </div>
+  </div>
+</header>
+
+<section class="filtros">
+  <div class="wrap">
+    <div class="fila">
+      <span class="fila-tit">Público</span>
+      <span id="fPublico"></span>
+    </div>
+    <div class="fila">
+      <span class="fila-tit">Instrumento</span>
+      <span id="fInstrumento"></span>
+    </div>
+    <div class="fila">
+      <span class="fila-tit">Categoría</span>
+      <span id="fCategoria"></span>
+    </div>
+    <div class="fila">
+      <span class="fila-tit">Nivel / Plan</span>
+      <span id="fNivel"></span>
+    </div>
+    <div class="fila">
+      <span class="fila-tit">Buscar</span>
+      <input class="buscar" id="buscar" type="search" placeholder="Periodo, instrumento, nota…">
+      <button class="limpiar" id="limpiar">Quitar todos los filtros</button>
+    </div>
+  </div>
+</section>
+
+<main class="wrap">
+  <div class="stats" id="stats"></div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-vista="cinta" aria-selected="true">Cinta anual</button>
+    <button class="tab" role="tab" data-vista="agenda" aria-selected="false">Agenda</button>
+    <button class="tab" role="tab" data-vista="tabla" aria-selected="false">Tabla</button>
+  </div>
+
+  <div class="panel" id="panel"></div>
+
+  <div class="acciones">
+    <span class="fuente" id="fuente"></span>
+    <button class="btn" id="descargar">Descargar lo filtrado (CSV)</button>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <b>Fuente única de verdad:</b> data/calendario.xlsx · Se actualiza una vez al año y el sitio se refresca al recargar.
+  </div>
+</footer>
+
+<div class="velo" id="velo"></div>
+<aside class="detalle" id="detalle" aria-hidden="true"></aside>
+
+<script>
+const SEED = [{"id": "2026-001", "anio": 2026, "periodo": "EM26", "periodicidad": "Semestral", "instrumento": "Opina", "categoria": "Compromisos Institucionales", "publico": "Alumnos", "nivel_plan": "Profesional", "recepcion_bases": "2026-04-11", "aplicacion_inicio": "2026-04-27", "aplicacion_fin": "2026-05-10", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-002", "anio": 2026, "periodo": "AD26", "periodicidad": "Semestral", "instrumento": "Opina", "categoria": "Compromisos Institucionales", "publico": "Alumnos", "nivel_plan": "Profesional", "recepcion_bases": "2026-10-30", "aplicacion_inicio": "2026-11-09", "aplicacion_fin": "2026-11-22", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-003", "anio": 2026, "periodo": "EM26", "periodicidad": "Semestral", "instrumento": "ECAG", "categoria": "Monitoreo", "publico": "Alumnos", "nivel_plan": "Profesional", "recepcion_bases": "2026-04-17", "aplicacion_inicio": "2026-05-04", "aplicacion_fin": "2026-06-14", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-004", "anio": 2026, "periodo": "AD26", "periodicidad": "Semestral", "instrumento": "ECAG", "categoria": "Monitoreo", "publico": "Alumnos", "nivel_plan": "Profesional", "recepcion_bases": "2026-11-14", "aplicacion_inicio": "2026-11-23", "aplicacion_fin": "2026-12-16", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-005", "anio": 2026, "periodo": "EA26", "periodicidad": "Tetramestral", "instrumento": "ECAG", "categoria": "Monitoreo", "publico": "Alumnos", "nivel_plan": "Ejecutivo y Maestría", "recepcion_bases": "2026-03-26", "aplicacion_inicio": "2026-04-06", "aplicacion_fin": "2026-04-17", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-006", "anio": 2026, "periodo": "MA26", "periodicidad": "Tetramestral", "instrumento": "ECAG", "categoria": "Monitoreo", "publico": "Alumnos", "nivel_plan": "Ejecutivo y Maestría", "recepcion_bases": "2026-07-10", "aplicacion_inicio": "2026-07-20", "aplicacion_fin": "2026-08-07", "entrega_resultados": "", "area_responsable": "", "notas": "Revisar: el archivo 2026 decía 'viernes 20 de julio'; el 20/07/2026 es lunes."}, {"id": "2026-007", "anio": 2026, "periodo": "SD26", "periodicidad": "Tetramestral", "instrumento": "ECAG", "categoria": "Monitoreo", "publico": "Alumnos", "nivel_plan": "Ejecutivo y Maestría", "recepcion_bases": "2026-11-13", "aplicacion_inicio": "2026-11-23", "aplicacion_fin": "2026-12-04", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-008", "anio": 2026, "periodo": "EA26", "periodicidad": "Tetramestral", "instrumento": "Opina", "categoria": "Compromisos Institucionales", "publico": "Alumnos", "nivel_plan": "Ejecutivo y Maestría", "recepcion_bases": "2026-03-26", "aplicacion_inicio": "2026-04-06", "aplicacion_fin": "2026-04-17", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-009", "anio": 2026, "periodo": "MA26", "periodicidad": "Tetramestral", "instrumento": "Opina", "categoria": "Compromisos Institucionales", "publico": "Alumnos", "nivel_plan": "Ejecutivo y Maestría", "recepcion_bases": "2026-07-10", "aplicacion_inicio": "2026-07-20", "aplicacion_fin": "2026-08-07", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-010", "anio": 2026, "periodo": "SD26", "periodicidad": "Tetramestral", "instrumento": "Opina", "categoria": "Compromisos Institucionales", "publico": "Alumnos", "nivel_plan": "Ejecutivo y Maestría", "recepcion_bases": "2026-11-13", "aplicacion_inicio": "2026-11-23", "aplicacion_fin": "2026-12-04", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-011", "anio": 2026, "periodo": "EA26", "periodicidad": "Tetramestral", "instrumento": "Opina", "categoria": "Compromisos Institucionales", "publico": "Alumnos", "nivel_plan": "Preparatoria", "recepcion_bases": "2026-03-26", "aplicacion_inicio": "2026-04-06", "aplicacion_fin": "2026-04-17", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-012", "anio": 2026, "periodo": "MA26", "periodicidad": "Tetramestral", "instrumento": "Opina", "categoria": "Compromisos Institucionales", "publico": "Alumnos", "nivel_plan": "Preparatoria", "recepcion_bases": "2026-07-10", "aplicacion_inicio": "2026-07-20", "aplicacion_fin": "2026-07-31", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-013", "anio": 2026, "periodo": "SD26", "periodicidad": "Tetramestral", "instrumento": "Opina", "categoria": "Compromisos Institucionales", "publico": "Alumnos", "nivel_plan": "Preparatoria", "recepcion_bases": "2026-10-30", "aplicacion_inicio": "2026-11-09", "aplicacion_fin": "2026-11-20", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-014", "anio": 2026, "periodo": "EA26", "periodicidad": "Tetramestral", "instrumento": "Opina", "categoria": "Compromisos Institucionales", "publico": "Alumnos", "nivel_plan": "Profesional Adultos", "recepcion_bases": "2026-03-26", "aplicacion_inicio": "2026-04-06", "aplicacion_fin": "2026-04-20", "entrega_resultados": "", "area_responsable": "", "notas": "Revisar: el archivo decía 'viernes 20 de abril'; el 20/04/2026 es lunes."}, {"id": "2026-015", "anio": 2026, "periodo": "MA26", "periodicidad": "Tetramestral", "instrumento": "Opina", "categoria": "Compromisos Institucionales", "publico": "Alumnos", "nivel_plan": "Profesional Adultos", "recepcion_bases": "2026-07-17", "aplicacion_inicio": "2026-07-27", "aplicacion_fin": "2026-08-10", "entrega_resultados": "", "area_responsable": "", "notas": "Revisar: el archivo decía 'viernes 10 de agosto'; el 10/08/2026 es lunes."}, {"id": "2026-016", "anio": 2026, "periodo": "SD26", "periodicidad": "Tetramestral", "instrumento": "Opina", "categoria": "Compromisos Institucionales", "publico": "Alumnos", "nivel_plan": "Profesional Adultos", "recepcion_bases": "2026-11-06", "aplicacion_inicio": "2026-11-16", "aplicacion_fin": "2026-11-30", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-017", "anio": 2026, "periodo": "Trim 1", "periodicidad": "Trimestral", "instrumento": "Opina", "categoria": "Compromisos Institucionales", "publico": "Alumnos", "nivel_plan": "Ejecutivo y Maestría", "recepcion_bases": "2026-03-06", "aplicacion_inicio": "2026-03-13", "aplicacion_fin": "2026-03-27", "entrega_resultados": "2026-04-04", "area_responsable": "", "notas": ""}, {"id": "2026-018", "anio": 2026, "periodo": "Trim 2", "periodicidad": "Trimestral", "instrumento": "Opina", "categoria": "Compromisos Institucionales", "publico": "Alumnos", "nivel_plan": "Ejecutivo y Maestría", "recepcion_bases": "2026-06-08", "aplicacion_inicio": "2026-06-15", "aplicacion_fin": "2026-06-26", "entrega_resultados": "2026-07-03", "area_responsable": "", "notas": ""}, {"id": "2026-019", "anio": 2026, "periodo": "Trim 3", "periodicidad": "Trimestral", "instrumento": "Opina", "categoria": "Compromisos Institucionales", "publico": "Alumnos", "nivel_plan": "Ejecutivo y Maestría", "recepcion_bases": "2026-08-28", "aplicacion_inicio": "2026-09-04", "aplicacion_fin": "2026-09-18", "entrega_resultados": "2026-09-25", "area_responsable": "", "notas": ""}, {"id": "2026-020", "anio": 2026, "periodo": "Trim 4", "periodicidad": "Trimestral", "instrumento": "Opina", "categoria": "Compromisos Institucionales", "publico": "Alumnos", "nivel_plan": "Ejecutivo y Maestría", "recepcion_bases": "2026-11-23", "aplicacion_inicio": "2026-11-30", "aplicacion_fin": "2026-12-11", "entrega_resultados": "2026-12-20", "area_responsable": "", "notas": ""}, {"id": "2026-021", "anio": 2026, "periodo": "Bim 1 y 2", "periodicidad": "Bimestral", "instrumento": "MAPS", "categoria": "Monitoreo", "publico": "Alumnos", "nivel_plan": "Preparatoria", "recepcion_bases": "2026-05-07", "aplicacion_inicio": "2026-05-15", "aplicacion_fin": "2026-05-23", "entrega_resultados": "2026-06-01", "area_responsable": "", "notas": "Bloque marzo–mayo 26. Revisar: el archivo decía 'domingo 23 de mayo'; el 23/05/2026 es sábado."}, {"id": "2026-022", "anio": 2026, "periodo": "Bim 3", "periodicidad": "Bimestral", "instrumento": "MAPS", "categoria": "Monitoreo", "publico": "Alumnos", "nivel_plan": "Preparatoria", "recepcion_bases": "2026-07-16", "aplicacion_inicio": "2026-07-24", "aplicacion_fin": "2026-08-02", "entrega_resultados": "2026-08-11", "area_responsable": "", "notas": "Bloque junio–julio 26."}, {"id": "2026-023", "anio": 2026, "periodo": "Bim 4 y 5", "periodicidad": "Bimestral", "instrumento": "MAPS", "categoria": "Monitoreo", "publico": "Alumnos", "nivel_plan": "Preparatoria", "recepcion_bases": "2026-11-26", "aplicacion_inicio": "2026-12-04", "aplicacion_fin": "2026-12-13", "entrega_resultados": "2026-12-20", "area_responsable": "", "notas": "Bloque octubre–diciembre 26."}, {"id": "2026-024", "anio": 2026, "periodo": "Bim 1 y 2", "periodicidad": "Bimestral", "instrumento": "LAN", "categoria": "Monitoreo", "publico": "Alumnos", "nivel_plan": "Preparatoria", "recepcion_bases": "2026-05-07", "aplicacion_inicio": "2026-05-11", "aplicacion_fin": "2026-05-25", "entrega_resultados": "2026-06-01", "area_responsable": "", "notas": "Fechas de entrega tomadas del bloque 'Bimestral' genérico: confirmar si aplican igual que MAPS."}, {"id": "2026-025", "anio": 2026, "periodo": "Bim 3", "periodicidad": "Bimestral", "instrumento": "LAN", "categoria": "Monitoreo", "publico": "Alumnos", "nivel_plan": "Preparatoria", "recepcion_bases": "2026-07-16", "aplicacion_inicio": "2026-07-20", "aplicacion_fin": "2026-07-31", "entrega_resultados": "2026-08-11", "area_responsable": "", "notas": ""}, {"id": "2026-026", "anio": 2026, "periodo": "Bim 4 y 5", "periodicidad": "Bimestral", "instrumento": "LAN", "categoria": "Monitoreo", "publico": "Alumnos", "nivel_plan": "Preparatoria", "recepcion_bases": "2026-11-26", "aplicacion_inicio": "2026-12-07", "aplicacion_fin": "2026-12-21", "entrega_resultados": "2026-12-20", "area_responsable": "", "notas": "Revisar: la entrega de indicadores (20/12) cae antes del cierre de aplicación (21/12)."}, {"id": "2026-027", "anio": 2026, "periodo": "EM26 B1 P1", "periodicidad": "Bloques", "instrumento": "Pulso Docente", "categoria": "Monitoreo", "publico": "Docentes", "nivel_plan": "Todos los niveles", "recepcion_bases": "", "aplicacion_inicio": "2026-01-26", "aplicacion_fin": "2026-01-30", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-028", "anio": 2026, "periodo": "EM26 B1 P2", "periodicidad": "Bloques", "instrumento": "Pulso Docente", "categoria": "Monitoreo", "publico": "Docentes", "nivel_plan": "Todos los niveles", "recepcion_bases": "", "aplicacion_inicio": "2026-02-23", "aplicacion_fin": "2026-02-27", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-029", "anio": 2026, "periodo": "EM26 B2 P1", "periodicidad": "Bloques", "instrumento": "Pulso Docente", "categoria": "Monitoreo", "publico": "Docentes", "nivel_plan": "Todos los niveles", "recepcion_bases": "", "aplicacion_inicio": "2026-04-06", "aplicacion_fin": "2026-04-10", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-030", "anio": 2026, "periodo": "EM26 B2 P2", "periodicidad": "Bloques", "instrumento": "Pulso Docente", "categoria": "Monitoreo", "publico": "Docentes", "nivel_plan": "Todos los niveles", "recepcion_bases": "", "aplicacion_inicio": "2026-05-04", "aplicacion_fin": "2026-05-08", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-031", "anio": 2026, "periodo": "AD26 B1 P1", "periodicidad": "Bloques", "instrumento": "Pulso Docente", "categoria": "Monitoreo", "publico": "Docentes", "nivel_plan": "Todos los niveles", "recepcion_bases": "", "aplicacion_inicio": "2026-08-24", "aplicacion_fin": "2026-08-28", "entrega_resultados": "", "area_responsable": "", "notas": "Confirmar con DREA."}, {"id": "2026-032", "anio": 2026, "periodo": "AD26 B1 P2", "periodicidad": "Bloques", "instrumento": "Pulso Docente", "categoria": "Monitoreo", "publico": "Docentes", "nivel_plan": "Todos los niveles", "recepcion_bases": "", "aplicacion_inicio": "2026-09-21", "aplicacion_fin": "2026-09-25", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-033", "anio": 2026, "periodo": "AD26 B2 P1", "periodicidad": "Bloques", "instrumento": "Pulso Docente", "categoria": "Monitoreo", "publico": "Docentes", "nivel_plan": "Todos los niveles", "recepcion_bases": "", "aplicacion_inicio": "2026-10-26", "aplicacion_fin": "2026-10-30", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-034", "anio": 2026, "periodo": "AD26 B2 P2", "periodicidad": "Bloques", "instrumento": "Pulso Docente", "categoria": "Monitoreo", "publico": "Docentes", "nivel_plan": "Todos los niveles", "recepcion_bases": "", "aplicacion_inicio": "2026-11-23", "aplicacion_fin": "2026-11-27", "entrega_resultados": "", "area_responsable": "", "notas": ""}, {"id": "2026-035", "anio": 2026, "periodo": "EM26", "periodicidad": "Semestral", "instrumento": "Ev Docente", "categoria": "Compromisos Institucionales", "publico": "Alumnos", "nivel_plan": "Todos los niveles", "recepcion_bases": "", "aplicacion_inicio": "2026-05-11", "aplicacion_fin": "2026-05-29", "entrega_resultados": "", "area_responsable": "", "notas": "Revisar: el archivo decía 'lunes 10 de mayo'; el 10/05/2026 es domingo."}, {"id": "2026-036", "anio": 2026, "periodo": "AD26", "periodicidad": "Semestral", "instrumento": "Ev Docente", "categoria": "Compromisos Institucionales", "publico": "Alumnos", "nivel_plan": "Todos los niveles", "recepcion_bases": "", "aplicacion_inicio": "2026-11-30", "aplicacion_fin": "2026-12-11", "entrega_resultados": "", "area_responsable": "", "notas": "Revisar: el archivo decía 'lunes 30 de diciembre al viernes 11 de diciembre' (el fin cae antes del inicio)."}, {"id": "2026-037", "anio": 2026, "periodo": "EM-EA26", "periodicidad": "Semestral", "instrumento": "Empleabilidad", "categoria": "Compromisos Institucionales", "publico": "Egresados", "nivel_plan": "Profesional", "recepcion_bases": "", "aplicacion_inicio": "", "aplicacion_fin": "", "entrega_resultados": "2026-06-22", "area_responsable": "", "notas": "Entrega de tablas e indicadores de empleabilidad."}, {"id": "2026-038", "anio": 2026, "periodo": "MA26", "periodicidad": "Tetramestral", "instrumento": "Empleabilidad", "categoria": "Compromisos Institucionales", "publico": "Egresados", "nivel_plan": "Profesional", "recepcion_bases": "", "aplicacion_inicio": "", "aplicacion_fin": "", "entrega_resultados": "2026-08-21", "area_responsable": "", "notas": "Entrega de tablas e indicadores de empleabilidad."}, {"id": "2026-039", "anio": 2026, "periodo": "AD-SD26", "periodicidad": "Semestral", "instrumento": "Empleabilidad", "categoria": "Compromisos Institucionales", "publico": "Egresados", "nivel_plan": "Profesional", "recepcion_bases": "", "aplicacion_inicio": "", "aplicacion_fin": "", "entrega_resultados": "2026-12-20", "area_responsable": "", "notas": "Entrega de tablas e indicadores de empleabilidad."}];
+
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MES3  = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+const DIAS  = ['dom','lun','mar','mié','jue','vie','sáb'];
+const HOY   = new Date(new Date().toDateString());
+
+let DATOS = SEED, ORIGEN = 'datos de ejemplo incluidos en la página';
+let vista = 'cinta';
+let agRango = 'desde';   // 'prox30' | 'desde' | 'todo'
+const filtro = { anio:'', publico:new Set(), instrumento:new Set(), categoria:new Set(), nivel:new Set(), q:'' };
+
+/* ---------------- utilidades ---------------- */
+const d = s => s ? new Date(s + 'T00:00:00') : null;
+const fCorta = s => { const x = d(s); return x ? `${x.getDate()} ${MES3[x.getMonth()].toLowerCase()}` : '—'; };
+const fLarga = s => { const x = d(s); return x ? `${DIAS[x.getDay()]} ${x.getDate()} de ${MESES[x.getMonth()].toLowerCase()} de ${x.getFullYear()}` : 'Sin fecha registrada'; };
+const pctAnio = (fecha, anio) => {
+  const ini = new Date(anio,0,1), fin = new Date(anio,11,31);
+  return Math.max(0, Math.min(100, (fecha - ini) / (fin - ini) * 100));
+};
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const claseCat = c => c === 'Monitoreo' ? 'monitoreo' : 'compromisos';
+
+/* ---------------- carga de datos ---------------- */
+async function cargar(){
+  try{
+    const r = await fetch('data/calendario.xlsx', {cache:'no-store'});
+    if(r.ok && typeof XLSX !== 'undefined'){
+      const wb = XLSX.read(await r.arrayBuffer(), {type:'array'});
+      const hoja = wb.Sheets['Datos'] || wb.Sheets[wb.SheetNames[0]];
+      const filas = XLSX.utils.sheet_to_json(hoja, {defval:'', raw:false});
+      if(filas.length){ DATOS = filas; ORIGEN = 'data/calendario.xlsx'; return; }
+    }
+  }catch(e){}
+  try{
+    const r = await fetch('data/calendario.csv', {cache:'no-store'});
+    if(r.ok){
+      const t = (await r.text()).replace(/^\uFEFF/,'').trim().split('\n');
+      const cab = t[0].split(',').map(s=>s.trim());
+      DATOS = t.slice(1).map(l=>{
+        const v = l.match(/("([^"]|"")*"|[^,]*)/g).filter((_,i)=>i%2===0);
+        return Object.fromEntries(cab.map((c,i)=>[c,(v[i]||'').replace(/^"|"$/g,'').replace(/""/g,'"')]));
+      });
+      ORIGEN = 'data/calendario.csv';
+    }
+  }catch(e){}
+}
+
+/* ---------------- filtros ---------------- */
+function unicos(campo){ return [...new Set(SEEDoDATOS().map(r=>r[campo]).filter(Boolean))].sort(); }
+function SEEDoDATOS(){ return DATOS; }
+
+function pintarChips(){
+  const anios = [...new Set(DATOS.map(r=>String(r.anio)))].sort();
+  if(!filtro.anio) filtro.anio = anios.includes(String(HOY.getFullYear())) ? String(HOY.getFullYear()) : anios[anios.length-1];
+  const sel = document.getElementById('selAnio');
+  sel.innerHTML = anios.map(a=>`<option value="${a}"${a===filtro.anio?' selected':''}>${a}</option>`).join('')
+                + `<option value="todos"${filtro.anio==='todos'?' selected':''}>Todos los años</option>`;
+
+  const grupos = [['fPublico','publico'],['fInstrumento','instrumento'],['fCategoria','categoria'],['fNivel','nivel_plan']];
+  for(const [id, campo] of grupos){
+    const clave = campo === 'nivel_plan' ? 'nivel' : campo;
+    const cont = document.getElementById(id);
+    cont.innerHTML = unicos(campo).map(v =>
+      `<button class="chip${id==='fNivel'?' mini':''}" data-g="${clave}" data-v="${esc(v)}" aria-pressed="${filtro[clave].has(v)}">${esc(v)}</button>`
+    ).join(' ');
+  }
+}
+
+function filtrar(){
+  return DATOS.filter(r=>{
+    if(filtro.anio !== 'todos' && String(r.anio) !== filtro.anio) return false;
+    if(filtro.publico.size && !filtro.publico.has(r.publico)) return false;
+    if(filtro.instrumento.size && !filtro.instrumento.has(r.instrumento)) return false;
+    if(filtro.categoria.size && !filtro.categoria.has(r.categoria)) return false;
+    if(filtro.nivel.size && !filtro.nivel.has(r.nivel_plan)) return false;
+    if(filtro.q){
+      const t = Object.values(r).join(' ').toLowerCase();
+      if(!t.includes(filtro.q.toLowerCase())) return false;
+    }
+    return true;
+  });
+}
+
+/* ---------------- indicadores ---------------- */
+function pintarStats(rows){
+  const enCurso = rows.filter(r=>{
+    const a=d(r.aplicacion_inicio), b=d(r.aplicacion_fin);
+    return a && b && a<=HOY && HOY<=b;
+  }).length;
+  let prox = 0;
+  rows.forEach(r => HITOS.forEach(([campo])=>{
+    const x = d(r[campo]);
+    if(x && x >= HOY && (x - HOY)/864e5 <= 30) prox++;
+  }));
+  const sinRes = rows.filter(r=>!r.entrega_resultados).length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><b>${rows.length}</b><span>Aplicaciones</span></div>
+    <div class="stat"><b>${enCurso}</b><span>Abiertas hoy</span></div>
+    <button class="stat liga" id="statProx"><b>${prox}</b><span>Fechas en los próximos 30 días</span></button>
+    <div class="stat${sinRes?' alerta':''}"><b>${sinRes}</b><span>Sin fecha de resultados</span></div>`;
+}
+
+/* ---------------- vista: cinta ---------------- */
+function vistaCinta(rows){
+  const anio = filtro.anio === 'todos' ? null : +filtro.anio;
+  if(filtro.anio === 'todos')
+    return `<div class="nada"><b>La cinta anual se dibuja sobre un solo año</b><span>Elige un año arriba a la derecha para verla, o cambia a Agenda o Tabla.</span></div>`;
+
+  const grupos = {};
+  rows.forEach(r => (grupos[r.instrumento] ||= []).push(r));
+  const hoyPct = HOY.getFullYear() === anio ? pctAnio(HOY, anio) : null;
+
+  let html = `<div class="cinta-scroll"><div class="cinta">
+    <div class="meses"><div class="rail">Periodo</div>
+      <div class="track">${MES3.map(m=>`<div class="m">${m}</div>`).join('')}${hoyPct!==null?`<div class="hoy-rotulo" style="left:${hoyPct}%"></div>`:''}</div></div>`;
+
+  for(const [inst, lista] of Object.entries(grupos)){
+    lista.sort((a,b)=>(a.aplicacion_inicio||a.entrega_resultados||'').localeCompare(b.aplicacion_inicio||b.entrega_resultados||''));
+    html += `<div class="grupo-tit"><div class="rail">${esc(inst)}</div><div class="cuenta">${lista.length} aplicaci${lista.length===1?'ón':'ones'}</div></div>`;
+    for(const r of lista){
+      const a = d(r.aplicacion_inicio), b = d(r.aplicacion_fin);
+      const rec = d(r.recepcion_bases), ent = d(r.entrega_resultados);
+      let marcas = '';
+      if(a && b){
+        const x = pctAnio(a, anio), w = Math.max(pctAnio(b, anio) - x, .5);
+        marcas += `<div class="barra ${claseCat(r.categoria)}" style="left:${x}%;width:${w}%"></div>`;
+      }
+      if(rec) marcas += `<div class="marca recep" style="left:${pctAnio(rec,anio)}%" title="Recepción de bases"></div>`;
+      if(ent) marcas += `<div class="marca entrega" style="left:${pctAnio(ent,anio)}%" title="Entrega de resultados"></div>`;
+      html += `<div class="lane" data-id="${esc(r.id)}" tabindex="0" role="button">
+        <div class="rail"><b>${esc(r.periodo)}</b><small>${esc(r.nivel_plan)}</small></div>
+        <div class="track"><div class="grid-mes">${'<i></i>'.repeat(12)}</div>
+          ${hoyPct!==null?`<div class="hoy-linea" style="left:${hoyPct}%"></div>`:''}${marcas}</div>
+      </div>`;
+    }
+  }
+  if(!rows.length) html += `<div class="nada"><b>Nada que mostrar con estos filtros</b><span>Quita alguno para volver a ver aplicaciones.</span></div>`;
+  html += `</div></div>
+    <div class="leyenda">
+      <span><i class="sw"></i> Aplicación · Compromisos Institucionales</span>
+      <span><i class="sw t"></i> Aplicación · Monitoreo</span>
+      <span><i class="sw d"></i> Recepción de bases</span>
+      <span><i class="sw tri"></i> Entrega de resultados</span>
+    </div>`;
+  return html;
+}
+
+/* ---------------- vista: agenda ---------------- */
+const HITOS = [
+  ['recepcion_bases','Recepción de bases','recepcion'],
+  ['aplicacion_inicio','Inicia aplicación','inicio'],
+  ['aplicacion_fin','Cierra aplicación','cierre'],
+  ['entrega_resultados','Entrega de resultados','entrega'],
+];
+
+function vistaAgenda(rows){
+  let evs = [];
+  rows.forEach(r => HITOS.forEach(([campo,etiqueta,clase])=>{
+    if(r[campo]) evs.push({fecha:r[campo], etiqueta, clase, r});
+  }));
+  evs.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const total = evs.length;
+  const n30 = evs.filter(e => { const x=d(e.fecha); return x>=HOY && (x-HOY)/864e5 <= 30; }).length;
+  if(agRango === 'prox30') evs = evs.filter(e => { const x=d(e.fecha); return x>=HOY && (x-HOY)/864e5 <= 30; });
+  else if(agRango === 'desde') evs = evs.filter(e => d(e.fecha) >= HOY);
+  const ctl = `<div class="agenda-ctl"><span class="fila-tit">Mostrar</span>
+    <button class="chip" id="agProx" aria-pressed="${agRango==='prox30'}">Próximos 30 días (${n30})</button>
+    <button class="chip" id="agDesde" aria-pressed="${agRango==='desde'}">De hoy en adelante</button>
+    <button class="chip" id="agTodo" aria-pressed="${agRango==='todo'}">Todo el año (${total})</button></div>`;
+  if(!evs.length) return ctl + `<div class="nada"><b>No hay fechas en este rango</b><span>Amplía el rango para revisar el resto del año.</span></div>`;
+
+  let html = ctl, mesActual = '';
+  for(const e of evs){
+    const x = d(e.fecha), clave = `${x.getFullYear()}-${x.getMonth()}`;
+    if(clave !== mesActual){
+      if(mesActual) html += '</div>';
+      const n = evs.filter(v=>{const y=d(v.fecha);return `${y.getFullYear()}-${y.getMonth()}`===clave}).length;
+      html += `<div class="mes-bloque"><div class="mes-cab"><h3>${MESES[x.getMonth()]} ${x.getFullYear()}</h3><small>${n} fecha${n===1?'':'s'}</small></div>`;
+      mesActual = clave;
+    }
+    const dias = Math.round((x - HOY)/864e5);
+    const cuando = dias === 0 ? 'hoy' : dias > 0 ? `en ${dias} día${dias===1?'':'s'}` : `hace ${-dias} día${dias===-1?'':'s'}`;
+    html += `<div class="ev${x<HOY?' pasado':''}" data-id="${esc(e.r.id)}" tabindex="0" role="button">
+      <div class="ev-fecha"><b>${x.getDate()}</b><span>${DIAS[x.getDay()]}</span></div>
+      <div class="ev-cuerpo"><b>${esc(e.r.instrumento)} · ${esc(e.r.periodo)}</b>
+        <small>${esc(e.r.nivel_plan)} · ${esc(e.r.publico)} · ${cuando}</small></div>
+      <span class="tipo ${e.clase}">${e.etiqueta}</span>
+    </div>`;
+  }
+  return html + '</div>';
+}
+
+/* ---------------- vista: tabla ---------------- */
+function vistaTabla(rows){
+  if(!rows.length) return `<div class="nada"><b>Nada que mostrar con estos filtros</b><span>Quita alguno para volver a ver renglones.</span></div>`;
+  const orden = [...rows].sort((a,b)=>(a.aplicacion_inicio||a.entrega_resultados||'zzz').localeCompare(b.aplicacion_inicio||b.entrega_resultados||'zzz'));
+  const celda = v => v ? `<span>${fCorta(v)}</span>` : `<span class="vacio">— sin registrar</span>`;
+  return `<div class="tabla-scroll"><table>
+    <thead><tr><th>Año</th><th>Instrumento</th><th>Periodo</th><th>Nivel / Plan</th><th>Público</th>
+      <th>Categoría</th><th>Recepción de bases</th><th>Aplicación</th><th>Entrega de resultados</th></tr></thead>
+    <tbody>${orden.map(r=>`<tr data-id="${esc(r.id)}" style="cursor:pointer">
+      <td class="f">${esc(r.anio)}</td><td><b>${esc(r.instrumento)}</b></td><td>${esc(r.periodo)}</td>
+      <td>${esc(r.nivel_plan)}</td><td>${esc(r.publico)}</td>
+      <td><span class="pill ${r.categoria==='Monitoreo'?'mo':'ci'}">${esc(r.categoria)}</span></td>
+      <td class="f">${celda(r.recepcion_bases)}</td>
+      <td class="f">${r.aplicacion_inicio ? fCorta(r.aplicacion_inicio)+' → '+fCorta(r.aplicacion_fin) : '<span class="vacio">— no aplica</span>'}</td>
+      <td class="f">${celda(r.entrega_resultados)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+/* ---------------- detalle ---------------- */
+function abrirDetalle(id){
+  const r = DATOS.find(x=>String(x.id)===String(id)); if(!r) return;
+  const fila = (t,v) => `<div><dt>${t}</dt><dd>${v}</dd></div>`;
+  document.getElementById('detalle').innerHTML = `
+    <div class="detalle-cab">
+      <button class="cerrar" aria-label="Cerrar">×</button>
+      <p class="eyebrow" style="margin:0">${esc(r.categoria)}</p>
+      <h2>${esc(r.instrumento)}</h2>
+      <p>${esc(r.periodo)} · ${esc(r.nivel_plan)} · ${esc(r.anio)}</p>
+    </div>
+    <dl class="dl">
+      ${fila('Público de interés', esc(r.publico))}
+      ${fila('Periodicidad', esc(r.periodicidad))}
+      ${fila('Recepción de bases', fLarga(r.recepcion_bases))}
+      ${fila('Inicia aplicación', fLarga(r.aplicacion_inicio))}
+      ${fila('Cierra aplicación', fLarga(r.aplicacion_fin))}
+      ${fila('Entrega de resultados', fLarga(r.entrega_resultados))}
+      ${fila('Área responsable', r.area_responsable ? esc(r.area_responsable) : 'Por definir')}
+    </dl>
+    ${r.notas ? `<div class="nota"><b>Pendiente por confirmar</b><br>${esc(r.notas)}</div>` : ''}`;
+  document.getElementById('detalle').classList.add('on');
+  document.getElementById('detalle').setAttribute('aria-hidden','false');
+  document.getElementById('velo').classList.add('on');
+}
+function cerrarDetalle(){
+  document.getElementById('detalle').classList.remove('on');
+  document.getElementById('detalle').setAttribute('aria-hidden','true');
+  document.getElementById('velo').classList.remove('on');
+}
+
+/* ---------------- render ---------------- */
+function render(){
+  const rows = filtrar();
+  pintarStats(rows);
+  const panel = document.getElementById('panel');
+  panel.innerHTML = vista==='cinta' ? vistaCinta(rows) : vista==='agenda' ? vistaAgenda(rows) : vistaTabla(rows);
+  const anios = [...new Set(DATOS.map(r=>String(r.anio)))];
+  document.getElementById('fuente').textContent =
+    `${rows.length} de ${DATOS.length} registros · histórico cargado: ${anios.join(', ')} · origen: ${ORIGEN}`;
+  panel.querySelectorAll('[data-id]').forEach(el=>{
+    el.onclick = () => abrirDetalle(el.dataset.id);
+    el.onkeydown = e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); abrirDetalle(el.dataset.id); } };
+  });
+}
+
+function descargar(){
+  const rows = filtrar();
+  const cols = ['anio','periodo','periodicidad','instrumento','categoria','publico','nivel_plan',
+                'recepcion_bases','aplicacion_inicio','aplicacion_fin','entrega_resultados','notas'];
+  const csv = [cols.join(',')].concat(rows.map(r=>cols.map(c=>`"${String(r[c]??'').replace(/"/g,'""')}"`).join(','))).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'}));
+  a.download = `calendario_encuestas_${filtro.anio}.csv`;
+  a.click();
+}
+
+/* ---------------- eventos ---------------- */
+document.addEventListener('click', e=>{
+  const rangos = {agProx:'prox30', agDesde:'desde', agTodo:'todo'};
+  if(rangos[e.target.id]){ agRango = rangos[e.target.id]; render(); return; }
+  if(e.target.closest('#statProx')){
+    vista = 'agenda'; agRango = 'prox30';
+    document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected', t.dataset.vista==='agenda'));
+    render();
+    document.getElementById('panel').scrollIntoView({behavior:'smooth', block:'start'});
+    return;
+  }
+  const chip = e.target.closest('.chip');
+  if(chip){
+    const g = chip.dataset.g, v = chip.dataset.v;
+    filtro[g].has(v) ? filtro[g].delete(v) : filtro[g].add(v);
+    chip.setAttribute('aria-pressed', filtro[g].has(v));
+    render(); return;
+  }
+  const tab = e.target.closest('.tab');
+  if(tab){
+    vista = tab.dataset.vista;
+    document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected', t===tab));
+    render(); return;
+  }
+  if(e.target.closest('.cerrar') || e.target.id === 'velo') cerrarDetalle();
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') cerrarDetalle(); });
+document.getElementById('selAnio').onchange = e => { filtro.anio = e.target.value; render(); };
+document.getElementById('buscar').oninput = e => { filtro.q = e.target.value.trim(); render(); };
+document.getElementById('limpiar').onclick = () => {
+  ['publico','instrumento','categoria','nivel'].forEach(g=>filtro[g].clear());
+  filtro.q=''; document.getElementById('buscar').value='';
+  document.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed','false'));
+  render();
+};
+document.getElementById('descargar').onclick = descargar;
+
+/* ---------------- arranque ---------------- */
+(async ()=>{
+  document.getElementById('hoy').textContent =
+    'Hoy · ' + HOY.getDate() + ' de ' + MESES[HOY.getMonth()].toLowerCase() + ' de ' + HOY.getFullYear();
+  await cargar();
+  pintarChips();
+  render();
+})();
+</script>
+</body>
+</html>
