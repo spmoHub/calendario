@@ -431,7 +431,7 @@ function vistaCinta(rows){
         const x = pctAnio(a, anio), w = Math.max(pctAnio(b, anio) - x, .5);
         marcas += `<div class="barra ${claseCat(r.categoria)}" style="left:${x}%;width:${w}%"></div>`;
       }
-      if(rec) marcas += `<div class="marca recep" style="left:${pctAnio(rec,anio)}%" title="Recepción de bases"></div>`;
+      if(rec) marcas += `<div class="marca recep" style="left:${pctAnio(rec,anio)}%" title="Deadline entrega de bases"></div>`;
       if(ent) marcas += `<div class="marca entrega" style="left:${pctAnio(ent,anio)}%" title="Entrega de resultados"></div>`;
       html += `<div class="lane" data-id="${esc(r.id)}" tabindex="0" role="button">
         <div class="rail"><b>${esc(r.periodo)}</b><small>${esc(r.nivel_plan)}</small></div>
@@ -445,7 +445,7 @@ function vistaCinta(rows){
     <div class="leyenda">
       <span><i class="sw"></i> Aplicación · Compromisos Institucionales</span>
       <span><i class="sw t"></i> Aplicación · Monitoreo</span>
-      <span><i class="sw d"></i> Recepción de bases</span>
+      <span><i class="sw d"></i> Deadline entrega de bases</span>
       <span><i class="sw tri"></i> Entrega de resultados</span>
     </div>`;
   return html;
@@ -453,7 +453,7 @@ function vistaCinta(rows){
 
 /* ---------------- vista: agenda ---------------- */
 const HITOS = [
-  ['recepcion_bases','Recepción de bases','recepcion'],
+  ['recepcion_bases','Deadline entrega de bases','recepcion'],
   ['aplicacion_inicio','Inicia aplicación','inicio'],
   ['aplicacion_fin','Cierra aplicación','cierre'],
   ['entrega_resultados','Entrega de resultados','entrega'],
@@ -503,7 +503,7 @@ function vistaTabla(rows){
   const celda = v => v ? `<span>${fCorta(v)}</span>` : `<span class="vacio">— sin registrar</span>`;
   return `<div class="tabla-scroll"><table>
     <thead><tr><th>Año</th><th>Instrumento</th><th>Periodo</th><th>Nivel / Plan</th><th>Público</th>
-      <th>Categoría</th><th>Recepción de bases</th><th>Aplicación</th><th>Entrega de resultados</th></tr></thead>
+      <th>Categoría</th><th>Deadline entrega de bases</th><th>Aplicación</th><th>Entrega de resultados</th></tr></thead>
     <tbody>${orden.map(r=>`<tr data-id="${esc(r.id)}" style="cursor:pointer">
       <td class="f">${esc(r.anio)}</td><td><b>${esc(r.instrumento)}</b></td><td>${esc(r.periodo)}</td>
       <td>${esc(r.nivel_plan)}</td><td>${esc(r.publico)}</td>
@@ -527,7 +527,7 @@ function abrirDetalle(id){
     <dl class="dl">
       ${fila('Público de interés', esc(r.publico))}
       ${fila('Periodicidad', esc(r.periodicidad))}
-      ${fila('Recepción de bases', fLarga(r.recepcion_bases))}
+      ${fila('Deadline entrega de bases', fLarga(r.recepcion_bases))}
       ${fila('Inicia aplicación', fLarga(r.aplicacion_inicio))}
       ${fila('Cierra aplicación', fLarga(r.aplicacion_fin))}
       ${fila('Entrega de resultados', fLarga(r.entrega_resultados))}
