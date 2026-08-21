@@ -531,7 +531,7 @@ function abrirDetalle(id){
       ${fila('Inicia aplicación', fLarga(r.aplicacion_inicio))}
       ${fila('Cierra aplicación', fLarga(r.aplicacion_fin))}
       ${fila('Entrega de resultados', fLarga(r.entrega_resultados))}
-      ${fila('Área responsable', r.area_responsable ? esc(r.area_responsable) : 'Por definir')}
+      ${fila('Responsable de entregar bases', r.area_responsable ? esc(r.area_responsable) : 'Por definir')}
     </dl>
     ${r.notas ? `<div class="nota"><b>Pendiente por confirmar</b><br>${esc(r.notas)}</div>` : ''}`;
   document.getElementById('detalle').classList.add('on');
